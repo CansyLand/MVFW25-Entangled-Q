@@ -9,32 +9,40 @@ import { triggerSceneEmote, movePlayerTo } from '~system/RestrictedActions'
 import { npcComponent } from './components'
 import { createTeleportButton } from './teleportButton'
 import { createTorus } from './torus'
-import { mirrorAvatar, spawnNPC, updateNpcSystem } from './NPC'
-
-// 🔴 reduce NPC count via server!
-// 🔴 Name server toggle
+import { followPlayerSystem, mirrorAvatar, spawnNPC, updateNpcWearableSystem } from './NPC'
 
 /* 
-- NPC is neutral
-- Payer walks by NPC
-- NPC updated wearables
-- NPC looks at you 
-- NPC applouds
+✓ NPC is neutral
+✓ Payer walks by NPC
+✓ NPC updated wearables
+✓ NPC looks at you 
+✓ NPC applouds
+🟢 Sync NPCs with otehr players
 - if someone leaves scene avatart turns neutal
 - one after anoter
+- FPS NPC controller
 
+– 3D environment Blender 23? textures?
+- Flor desing
+- teleporter design
+- Space design
 
+– Music? Jukebox?
+// 🔴 reduce NPC count via server!
+// 🔴 Name server toggle
+// Stram music from parutkin server + fallback
 
 */
 
 export function main() {
   createTorus()
   createTeleportButton()
-  spawnNPC(1000)
+  spawnNPC(100)
 }
 
 // engine.addSystem(mirrorAvatar, 0, 'mirrorAvatarSystem')
-engine.addSystem(updateNpcSystem, 0, 'updateNpcSystem')
+engine.addSystem(updateNpcWearableSystem, 0, 'updateNpcWearableSystem')
+engine.addSystem(followPlayerSystem, 0, 'followPlayerSystem')
 
 // System to handle NPC behavior
 function npcSystem(dt: number) {

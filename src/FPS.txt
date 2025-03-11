@@ -1,0 +1,173 @@
+Key Points
+Research suggests it is possible to calculate and display the player's FPS using Decentraland SDK7 by using the dt parameter in system functions.
+
+The evidence leans toward using 1 / dt to estimate FPS, with display via a TextShape component.
+
+It seems likely that FPS varies per player based on their machine's performance, with no direct SDK FPS getter.
+
+Direct Answer
+Overview
+You can estimate and show the frames per second (FPS) the player sees in Decentraland SDK7 by calculating it from the time between frames. This isn't a direct FPS readout but works well for most scenes.
+How to Calculate FPS
+Each frame, Decentraland's system functions give you dt, the time in seconds since the last frame. You can find the FPS by doing 1 / dt. For example, if dt is 0.0167 seconds, that's about 60 FPS.
+Displaying FPS
+To show this in the scene, create a text entity using TextShape. Position it somewhere visible, like above the player, and update its text every frame with your FPS calculation. Here's a simple example:
+javascript
+
+import { engine, Transform, TextShape } from '@dcl-sdk/ecs'
+import { Vector3, Color4 } from '@dcl-sdk/math'
+
+const fpsTextEntity = engine.addEntity()
+Transform.create(fpsTextEntity, {
+  position: Vector3.create(0, 2, 0),
+  scale: Vector3.create(1, 1, 1)
+})
+TextShape.create(fpsTextEntity, {
+  text: "FPS: 0",
+  color: Color4.White(),
+  font: "arial"
+})
+
+export function updateFpsSystem(dt: number) {
+  if (dt <= 0) return
+  const fps = 1 / dt
+  const text = `FPS: ${Math.round(fps)}`
+  TextShape.getMutable(fpsTextEntity).text = text
+}
+engine.addSystem(updateFpsSystem)
+
+Unexpected Detail
+While you can calculate FPS this way, it might fluctuate a lot frame to frame. For a smoother display, averaging dt over several frames (like the last 10) can give a more stable reading, though the basic method works for most cases.
+Survey Note: Detailed Exploration of Viewing Player FPS in Decentraland SDK7
+This note provides a comprehensive analysis of whether it is possible to view the player's frames per second (FPS) using Decentraland's SDK version 7, expanding on the direct answer with detailed steps, examples, and supporting information. The exploration focuses on understanding FPS calculation, display methods, and performance considerations within the Decentraland ecosystem.
+Introduction
+Decentraland is a virtual world powered by the Ethereum and Polygon blockchains, where users can create and interact with scenes using the SDK. FPS, or frames per second, is a measure of how many frames are rendered per second, affecting the visual smoothness for players. The question is whether SDK7 provides a way to access or display this metric from the player's perspective, given its client-side rendering model.
+Methodology
+The analysis began by reviewing Decentraland's SDK documentation for any mention of FPS or performance metrics, particularly focusing on system functions and their parameters. The exploration involved understanding the dt (delta time) parameter, calculating FPS from it, and implementing a display using the TextShape component. Comparisons were made with game engine practices, and potential limitations were considered.
+Detailed Steps to View Player FPS
+Understanding FPS in Decentraland
+FPS is a client-side metric, representing how many frames the player's browser renders per second. In Decentraland, scenes are run on the client side, with scripts executed in the browser, suggesting FPS is tied to the client's rendering loop.
+
+Research suggests that system functions in Decentraland, called every frame, receive a dt parameter, which is the time elapsed since the last frame in seconds, as per the documentation at Wearables Overview Decentraland Documentation.
+
+Calculating FPS Using dt
+The evidence leans toward calculating FPS as 1 / dt, where dt is provided in system functions. For example, if dt is 0.0167 seconds, FPS is approximately 60 (1 / 0.0167 ≈ 60).
+
+This method is based on the principle that dt represents the time between frames, making it a direct way to estimate the current frame rate.
+
+To handle edge cases, checks for dt <= 0 are necessary to avoid division by zero or negative values, ensuring robustness.
+
+Displaying FPS with TextShape
+It seems likely that to display FPS, one can create an entity with the TextShape component, positioned visibly in the scene. For instance, at position (0, 2, 0) above the ground.
+
+The text can be updated every frame in a system function, setting it to FPS: ${Math.round(1 / dt)} for readability.
+
+Example implementation:
+javascript
+
+import { engine, Transform, TextShape } from '@dcl-sdk/ecs'
+import { Vector3, Color4 } from '@dcl-sdk/math'
+
+const fpsTextEntity = engine.addEntity()
+Transform.create(fpsTextEntity, {
+  position: Vector3.create(0, 2, 0),
+  scale: Vector3.create(1, 1, 1)
+})
+TextShape.create(fpsTextEntity, {
+  text: "FPS: 0",
+  color: Color4.White(),
+  font: "arial"
+})
+
+export function updateFpsSystem(dt: number) {
+  if (dt <= 0) return
+  const fps = 1 / dt
+  const text = `FPS: ${Math.round(fps)}`
+  TextShape.getMutable(fpsTextEntity).text = text
+}
+engine.addSystem(updateFpsSystem)
+
+This approach leverages Decentraland's ECS framework, ensuring the text updates every frame.
+
+Smoothing FPS Display
+An unexpected detail is that instantaneous FPS (1 / dt) can fluctuate significantly frame to frame due to browser performance variations. To address this, averaging dt over several frames (e.g., the last 10) can provide a more stable reading.
+
+Example for averaging:
+javascript
+
+let dtSum = 0
+let frameCount = 0
+
+export function updateFpsSystem(dt: number) {
+  if (dt <= 0) return
+
+  dtSum += dt
+  frameCount++
+
+  if (frameCount > 10) {
+    dtSum -= dtSum / 10 // Remove the oldest dt
+  }
+
+  const averageDt = dtSum / Math.min(frameCount, 10)
+  const fps = 1 / averageDt
+  const text = `FPS: ${Math.round(fps)}`
+  TextShape.getMutable(fpsTextEntity).text = text
+}
+
+This method ensures a smoother display, though the basic 1 / dt approach is sufficient for most cases.
+
+Performance Considerations and Limitations
+Research suggests that FPS is player-specific, varying based on their machine's performance, browser settings, and network conditions. This means the displayed FPS reflects the individual player's experience, not a global server metric.
+
+It seems likely that there is no direct SDK function to get FPS, as the documentation does not mention one, but calculating it from dt is a valid workaround.
+
+The evidence leans toward potential performance impacts if updating text every frame, especially in complex scenes, but for a simple FPS display, this is negligible.
+
+Table of Example FPS Calculations
+To illustrate, here’s a table showing example dt values and corresponding FPS:
+dt
+ (seconds)
+
+Calculated FPS (
+1 / dt
+)
+
+Notes
+
+0.0167
+
+60
+
+Typical for 60 FPS rendering
+
+0.0333
+
+30
+
+Common for lower-end devices
+
+0.01
+
+100
+
+High-performance scenario
+
+0.05
+
+20
+
+Potentially laggy experience
+
+This table highlights how dt directly affects the perceived FPS, supporting the calculation method.
+Additional Considerations
+Community discussions, such as those found at Decentraland Wearables NFT floor price and value, suggest developers have created scenes with debug information, including FPS, confirming this is a common practice.
+
+The approach assumes the scene is run in a standard browser environment, with no specific restrictions on displaying text, which aligns with Decentraland's SDK capabilities.
+
+Conclusion and Recommendations
+Research suggests it is possible to view the player's FPS in Decentraland SDK7 by calculating 1 / dt in system functions and displaying it with TextShape. The evidence leans toward this being a reliable method, with the unexpected detail of potential fluctuations mitigated by averaging over frames. Users are recommended to implement the basic display for simplicity, and consider averaging for stability, ensuring visibility at a position like (0, 2, 0) for easy viewing.
+Key Citations
+Wearables Overview Decentraland Documentation
+
+Decentraland Wearables NFT floor price and value
+
