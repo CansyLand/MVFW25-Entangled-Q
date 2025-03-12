@@ -9,7 +9,9 @@ import { triggerSceneEmote, movePlayerTo } from '~system/RestrictedActions'
 import { npcComponent } from './components'
 import { createTeleportButton } from './teleportButton'
 import { createTorus } from './torus'
-import { followPlayerSystem, mirrorAvatar, spawnNPC, updateNpcWearableSystem } from './NPC'
+import { followPlayerSystem, lookAtPlayerSystem, setupPlayerPresence, spawnNPC, updateNpcWearableSystem } from './NPC'
+import { createSyncButton } from './syncButton'
+import { isStateSyncronized, syncEntity } from '@dcl/sdk/network'
 
 /* 
 ✓ NPC is neutral
@@ -17,10 +19,10 @@ import { followPlayerSystem, mirrorAvatar, spawnNPC, updateNpcWearableSystem } f
 ✓ NPC updated wearables
 ✓ NPC looks at you 
 ✓ NPC applouds
-🟢 Sync NPCs with otehr players
-- if someone leaves scene avatart turns neutal
+✓ Sync NPCs with otehr players
+✓ if someone leaves scene avatart turns neutal
 - one after anoter
-- FPS NPC controller
+- new player should get newest NPC state
 
 – 3D environment Blender 23? textures?
 - Flor desing
@@ -30,41 +32,24 @@ import { followPlayerSystem, mirrorAvatar, spawnNPC, updateNpcWearableSystem } f
 – Music? Jukebox?
 // 🔴 reduce NPC count via server!
 // 🔴 Name server toggle
+- FPS NPC controller
 // Stram music from parutkin server + fallback
+
+
+
+// decentraland://realm=http://127.0.0.1:8000&local-scene=true&debug=true
 
 */
 
 export function main() {
+  spawnNPC(10)
   createTorus()
   createTeleportButton()
-  spawnNPC(100)
+  //createSyncButton()
+
+  setupPlayerPresence()
+  engine.addSystem(updateNpcWearableSystem)
+  // engine.addSystem(followPlayerSystem)
+  engine.addSystem(lookAtPlayerSystem)
+  // engine.addSystem(revertNpcWearablesSystem)
 }
-
-// engine.addSystem(mirrorAvatar, 0, 'mirrorAvatarSystem')
-engine.addSystem(updateNpcWearableSystem, 0, 'updateNpcWearableSystem')
-engine.addSystem(followPlayerSystem, 0, 'followPlayerSystem')
-
-// System to handle NPC behavior
-function npcSystem(dt: number) {
-  for (const [entity] of engine.getEntitiesWith(npcComponent)) {
-    // Access other components of the entity if needed
-
-    // let userData = getPlayer()
-    // if (!userData) return
-    Transform.getMutable(entity).rotation = Quaternion.add(
-      Quaternion.fromEulerDegrees(0, dt, dt),
-      Transform.get(entity).rotation
-    )
-
-    Transform.getMutable(entity).position = Vector3.create(
-      Math.random() * 14 + 1, // Random X coordinate between 0 and 16
-      0.25, // Y coordinate remains the same
-      Math.random() * 14 + 1 // Random Z coordinate between 0 and 16
-    )
-
-    // Add your logic here for each NPC
-  }
-}
-
-// Add the system to the engine
-// engine.addSystem(npcSystem)
