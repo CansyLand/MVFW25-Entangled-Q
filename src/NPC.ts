@@ -14,23 +14,34 @@ import { MessageBus } from '@dcl/sdk/message-bus'
 const sceneMessageBus = new MessageBus()
 
 // Define message payload types
-type NpcPositionUpdate = {
-  npcId: number
-  position: { x: number; y: number; z: number }
-  rotation: { x: number; y: number; z: number; w: number }
-}
-
 type NpcWearableUpdate = {
   npcId: number
   wearables: string[]
   name: string
   expressionTriggerId?: string
-  playerId?: string // Add playerId to sync it across clients
+  playerId: string // Always included for reference
+  position: { x: number; y: number; z: number }
+  rotation: { x: number; y: number; z: number; w: number }
 }
 
-type PlayerPresenceUpdate = {
+type PlayerJoinBroadcast = {
   playerId: string
-  isPresent: boolean
+  joinTimestamp: number
+}
+
+type NpcStateUpdate = {
+  targetPlayerId: string
+  npcStates: Array<{
+    npcId: number
+    wearables: string[]
+    name: string
+    position: { x: number; y: number; z: number }
+    playerId: string
+  }>
+}
+
+type NpcResetBroadcast = {
+  departedPlayerId: string
 }
 
 // Seeded random function for deterministic positions
@@ -72,45 +83,47 @@ export function spawnNPC(count: number) {
 }
 
 function setupMessageBusListeners() {
-  sceneMessageBus.on('updateNpcPosition', (info: NpcPositionUpdate) => {
-    for (const [entity] of engine.getEntitiesWith(npcComponent)) {
-      const npc = npcComponent.get(entity)
-      if (npc.npcId === info.npcId) {
-        const transform = Transform.getMutable(entity)
-        transform.position = { x: info.position.x, y: info.position.y, z: info.position.z }
-        transform.rotation = { x: info.rotation.x, y: info.rotation.y, z: info.rotation.z, w: info.rotation.w }
-        console.log(`NPC ${npc.npcId} position updated to:`, transform.position)
-        break
-      }
-    }
-  })
-
   sceneMessageBus.on('updateNpcWearables', (info: NpcWearableUpdate) => {
     for (const [entity] of engine.getEntitiesWith(npcComponent)) {
       const npc = npcComponent.get(entity)
       if (npc.npcId === info.npcId) {
         const avatar = AvatarShape.getMutable(entity)
         const npcMutable = npcComponent.getMutable(entity)
+        const transform = Transform.getMutable(entity)
         avatar.wearables = info.wearables
         avatar.name = info.name
-        if (info.expressionTriggerId) {
-          avatar.expressionTriggerId = info.expressionTriggerId
-        }
-        npcMutable.playerId = info.playerId || 'undefined' // Sync playerId
-        console.log(`NPC ${npc.npcId} wearables updated:`, info.wearables, `playerId: ${npcMutable.playerId}`)
+        avatar.expressionTriggerId = info.expressionTriggerId || 'idle'
+        npcMutable.playerId = info.playerId
+        transform.position = info.position
+        transform.rotation = info.rotation
         break
       }
     }
   })
 
-  sceneMessageBus.on('playerPresence', (info: PlayerPresenceUpdate) => {
-    if (info.isPresent) {
-      activePlayers.add(info.playerId)
-      console.log(`Player ${info.playerId} added to activePlayers. Current size: ${activePlayers.size}`)
-    } else {
-      activePlayers.delete(info.playerId)
-      console.log(`Player ${info.playerId} removed from activePlayers. Current size: ${activePlayers.size}`)
+  sceneMessageBus.on('playerJoinBroadcast', (info: PlayerJoinBroadcast) => {
+    activePlayers.set(info.playerId, info.joinTimestamp)
+    console.log(`Player ${info.playerId} joined at ${info.joinTimestamp}, activePlayers: ${mapToString(activePlayers)}`)
+
+    const oldestTimestamp = Math.min(...Array.from(activePlayers.values()))
+    if (activePlayers.get(currentPlayerId) === oldestTimestamp) {
+      console.log(`Oldest player ${currentPlayerId} sending NPC state to ${info.playerId}`)
+      sendNpcStateToNewPlayer(info.playerId)
     }
+  })
+
+  sceneMessageBus.on('npcStateUpdate', (info: NpcStateUpdate) => {
+    if (info.targetPlayerId === currentPlayerId) {
+      console.log(`Received NPC state update for ${currentPlayerId}`)
+      updateNpcStates(info.npcStates)
+    } else {
+      console.log(`Ignoring NPC state update for ${info.targetPlayerId}`)
+    }
+  })
+
+  sceneMessageBus.on('npcResetBroadcast', (info: NpcResetBroadcast) => {
+    console.log(`Received reset command for departed player ${info.departedPlayerId}`)
+    resetNpcsForPlayer(info.departedPlayerId)
   })
 }
 
@@ -137,12 +150,15 @@ export function updateNpcWearableSystem(dt: number) {
       console.log(`NPC ${npc.npcId} is close to player ${currentPlayerId}`)
       npc.playerId = currentPlayerId
 
+      const transform = Transform.get(entity)
       sceneMessageBus.emit('updateNpcWearables', {
         npcId: npc.npcId,
         wearables: userData.wearables,
         name: userData.name,
         expressionTriggerId: 'clap',
-        playerId: currentPlayerId // Send playerId to sync it
+        playerId: currentPlayerId,
+        position: transform.position,
+        rotation: transform.rotation
       })
     }
   }
@@ -183,19 +199,15 @@ export function followPlayerSystem(dt: number) {
           const stepVector = Vector3.scale(normalizedDirectionForStep, stepSize)
           npcTransform.position = Vector3.add(npcPos, stepVector)
 
-          sceneMessageBus.emit('updateNpcPosition', {
+          const avatar = AvatarShape.get(entity)
+          sceneMessageBus.emit('updateNpcWearables', {
             npcId: npc.npcId,
-            position: {
-              x: npcTransform.position.x,
-              y: npcTransform.position.y,
-              z: npcTransform.position.z
-            },
-            rotation: {
-              x: npcTransform.rotation.x,
-              y: npcTransform.rotation.y,
-              z: npcTransform.rotation.z,
-              w: npcTransform.rotation.w
-            }
+            wearables: avatar.wearables,
+            name: avatar.name,
+            expressionTriggerId: avatar.expressionTriggerId,
+            playerId: npc.playerId || 'undefined',
+            position: npcTransform.position,
+            rotation: npcTransform.rotation
           })
         }
       }
@@ -226,77 +238,130 @@ export function lookAtPlayerSystem(dt: number) {
         const lookRotation = Quaternion.fromLookAt(Vector3.Zero(), rotationDirection, Vector3.Up())
         npcTransform.rotation = lookRotation
 
-        sceneMessageBus.emit('updateNpcPosition', {
+        const avatar = AvatarShape.get(entity)
+        sceneMessageBus.emit('updateNpcWearables', {
           npcId: npc.npcId,
-          position: {
-            x: npcTransform.position.x,
-            y: npcTransform.position.y,
-            z: npcTransform.position.z
-          },
-          rotation: {
-            x: npcTransform.rotation.x,
-            y: npcTransform.rotation.y,
-            z: npcTransform.rotation.z,
-            w: npcTransform.rotation.w
-          }
+          wearables: avatar.wearables,
+          name: avatar.name,
+          expressionTriggerId: avatar.expressionTriggerId,
+          playerId: npc.playerId || 'undefined',
+          position: npcTransform.position,
+          rotation: npcTransform.rotation
         })
       }
     }
   }
 }
 
-// Player presence and NPC reversion
-const activePlayers = new Set<string>()
+// Track active players
+const activePlayers = new Map<string, number>() // playerId -> joinTimestamp
 const initialWearable = ['decentraland:off-chain:base-avatars:BaseMale']
+let currentPlayerId: string
 
 export function setupPlayerPresence() {
   const userData = getPlayer()
   if (!userData) return
-  const currentPlayerId = userData.userId
+  currentPlayerId = userData.userId
+  const currentJoinTimestamp = Date.now()
 
+  // Add current player to the map
+  activePlayers.set(currentPlayerId, currentJoinTimestamp)
+  console.log(
+    `Player ${currentPlayerId} joined at ${currentJoinTimestamp}, activePlayers: ${mapToString(activePlayers)}`
+  )
+
+  // Handle player entering the scene
   onEnterScene((player) => {
     if (!player?.userId) return
-    console.log('Player entered scene:', player.userId)
-    sceneMessageBus.emit('playerPresence', { playerId: player.userId, isPresent: true })
-    activePlayers.add(player.userId)
+    console.log(`Player entered scene: ${player.userId}`)
+
+    // Only the newest player broadcasts their join
+    if (player.userId === currentPlayerId) {
+      sceneMessageBus.emit('playerJoinBroadcast', {
+        playerId: currentPlayerId,
+        joinTimestamp: currentJoinTimestamp
+      })
+      console.log(`Broadcasted join for ${currentPlayerId}`)
+    }
   })
 
+  // Handle player leaving the scene (triggers for all players)
   onLeaveScene((userId) => {
     if (!userId) return
-    console.log('Player left scene:', userId)
-    sceneMessageBus.emit('playerPresence', { playerId: userId, isPresent: false })
+    console.log(`Player ${userId} left scene, activePlayers before: ${mapToString(activePlayers)}`)
+
+    // Remove the departed player from activePlayers
     activePlayers.delete(userId)
 
-    // Leader election: only the lowest playerId processes reversion
-    let isLeader = true
-    for (const playerId of activePlayers) {
-      if (playerId < currentPlayerId) {
-        isLeader = false
+    // Oldest player broadcasts the reset command
+    const oldestTimestamp = activePlayers.size > 0 ? Math.min(...Array.from(activePlayers.values())) : Infinity
+    if (activePlayers.get(currentPlayerId) === oldestTimestamp && activePlayers.size > 0) {
+      console.log(`Oldest player ${currentPlayerId} broadcasting NPC reset for ${userId}`)
+      sceneMessageBus.emit('npcResetBroadcast', {
+        departedPlayerId: userId
+      })
+      resetNpcsForPlayer(userId) // Leader also resets locally
+    }
+  })
+}
+
+// Send NPC state to the newest player
+function sendNpcStateToNewPlayer(targetPlayerId: string) {
+  const npcStates: NpcStateUpdate['npcStates'] = []
+  for (const [entity] of engine.getEntitiesWith(npcComponent)) {
+    const npc = npcComponent.get(entity)
+    const avatar = AvatarShape.get(entity)
+    const transform = Transform.get(entity)
+    npcStates.push({
+      npcId: npc.npcId,
+      wearables: avatar.wearables,
+      name: avatar.name || '',
+      position: transform.position,
+      playerId: npc.playerId || 'undefined'
+    })
+  }
+  sceneMessageBus.emit('npcStateUpdate', {
+    targetPlayerId,
+    npcStates
+  })
+  console.log(`Sent NPC state to ${targetPlayerId}`)
+}
+
+// Update local NPC states (for new players)
+function updateNpcStates(npcStates: NpcStateUpdate['npcStates']) {
+  for (const state of npcStates) {
+    for (const [entity] of engine.getEntitiesWith(npcComponent)) {
+      const npc = npcComponent.getMutable(entity)
+      if (npc.npcId === state.npcId) {
+        const avatar = AvatarShape.getMutable(entity)
+        const transform = Transform.getMutable(entity)
+        avatar.wearables = state.wearables
+        avatar.name = state.name
+        transform.position = state.position
+        npc.playerId = state.playerId
+        console.log(`Updated NPC ${npc.npcId} with playerId ${state.playerId}`)
         break
       }
     }
+  }
+}
 
-    if (isLeader) {
-      console.log(`Leader ${currentPlayerId} resetting NPCs for departed player ${userId}`)
-      for (const [entity] of engine.getEntitiesWith(npcComponent)) {
-        const npc = npcComponent.getMutable(entity)
-        if (npc.playerId === userId) {
-          console.log(`Resetting NPC ${npc.npcId} bound to player ${userId}`)
-          sceneMessageBus.emit('updateNpcWearables', {
-            npcId: npc.npcId,
-            wearables: initialWearable,
-            name: '',
-            expressionTriggerId: 'idle', // wave idle?
-            playerId: 'undefined' // Reset playerId to undefined
-          })
-          npc.playerId = 'undefined'
-        }
-      }
+// Reset NPCs for a departed player
+function resetNpcsForPlayer(departedPlayerId: string) {
+  for (const [entity] of engine.getEntitiesWith(npcComponent)) {
+    const npc = npcComponent.getMutable(entity)
+    if (npc.playerId === departedPlayerId) {
+      const avatar = AvatarShape.getMutable(entity)
+      avatar.wearables = initialWearable
+      avatar.expressionTriggerId = 'idle'
+      avatar.name = ''
+      npc.playerId = 'undefined'
+      console.log(`Reset NPC ${npc.npcId} for departed player ${departedPlayerId}`)
     }
-  })
+  }
+}
 
-  // Initial presence broadcast
-  sceneMessageBus.emit('playerPresence', { playerId: currentPlayerId, isPresent: true })
-  activePlayers.add(currentPlayerId)
-  console.log(`Initial activePlayers: ${Array.from(activePlayers)}`)
+// Helper for logging
+function mapToString(map: Map<string, number>): string {
+  return JSON.stringify(Array.from(map.entries()))
 }
