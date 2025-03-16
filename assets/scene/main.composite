@@ -34,6 +34,42 @@
       "data": {}
     },
     {
+      "name": "core::Animator",
+      "jsonSchema": {
+        "type": "object",
+        "properties": {},
+        "serializationType": "protocol-buffer",
+        "protocolBuffer": "PBAnimator"
+      },
+      "data": {
+        "0": {
+          "json": {
+            "states": []
+          }
+        }
+      }
+    },
+    {
+      "name": "inspector::Selection",
+      "jsonSchema": {
+        "type": "object",
+        "properties": {
+          "gizmo": {
+            "type": "integer",
+            "serializationType": "int32"
+          }
+        },
+        "serializationType": "map"
+      },
+      "data": {
+        "0": {
+          "json": {
+            "gizmo": 3
+          }
+        }
+      }
+    },
+    {
       "name": "inspector::SceneMetadata",
       "jsonSchema": {
         "type": "object",
@@ -314,27 +350,25 @@
       "data": {
         "0": {
           "json": {
-            "name": "SDK7 Scene Template",
-            "description": "template scene with SDK7",
-            "thumbnail": "images/scene-thumbnail.png",
+            "name": "mvfw-test",
+            "description": "mvfw-test",
+            "thumbnail": "images/scene-thumbnail2.png",
             "categories": [],
-            "author": "SDK",
-            "email": "",
+            "author": "Cansy",
+            "email": "cansyland@gmail.com",
             "tags": [],
             "layout": {
+              "base": {
+                "x": -26,
+                "y": -125
+              },
               "parcels": [
                 {
-                  "x": 0,
-                  "y": 0
+                  "x": -26,
+                  "y": -125
                 }
-              ],
-              "base": {
-                "x": 0,
-                "y": 0
-              }
+              ]
             },
-            "silenceVoiceChat": false,
-            "disablePortableExperiences": false,
             "spawnPoints": [
               {
                 "name": "spawn1",
@@ -642,6 +676,10 @@
               {
                 "type": "heal_player",
                 "jsonSchema": "{\"type\":\"object\",\"properties\":{\"multiplier\":{\"type\":\"integer\",\"serializationType\":\"int32\"}},\"serializationType\":\"map\"}"
+              },
+              {
+                "type": "claim_airdrop",
+                "jsonSchema": "{\"type\":\"object\",\"properties\":{},\"serializationType\":\"map\"}"
               }
             ]
           }

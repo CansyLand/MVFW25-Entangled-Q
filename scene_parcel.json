@@ -15,17 +15,28 @@
   "main": "bin/index.js",
   "tags": [],
   "scene": {
-    "parcels": ["0,0", "0,1", "1,0", "1,1"],
-    "base": "0,0"
+    "parcels": [
+      "-26,-125"
+    ],
+    "base": "-26,-125"
   },
   "spawnPoints": [
     {
       "name": "spawn1",
       "default": true,
       "position": {
-        "x": [0, 3],
-        "y": [0, 0],
-        "z": [0, 3]
+        "x": [
+          0,
+          3
+        ],
+        "y": [
+          0,
+          0
+        ],
+        "z": [
+          0,
+          3
+        ]
       },
       "cameraTarget": {
         "x": 8,
@@ -38,7 +49,10 @@
     "voiceChat": "enabled",
     "portableExperiences": "enabled"
   },
-  "requiredPermissions": ["ALLOW_TO_TRIGGER_AVATAR_EMOTE", "ALLOW_TO_MOVE_PLAYER_INSIDE_SCENE"],
+  "requiredPermissions": [
+    "ALLOW_TO_TRIGGER_AVATAR_EMOTE",
+    "ALLOW_TO_MOVE_PLAYER_INSIDE_SCENE"
+  ],
   "source": {
     "origin": "creator-hub",
     "projectId": "b9e20cb7-61be-430a-b058-27fe2c6fc940"

@@ -6,7 +6,9 @@ import { MeshRenderer } from '@dcl/sdk/ecs'
 import { InputAction, pointerEventsSystem } from '@dcl/sdk/ecs'
 import { movePlayerTo } from '~system/RestrictedActions'
 
-export function createTeleportButton() {
+let npcIsSetup = false
+
+export function createTeleportButton(setupNPCs: () => void) {
   const teleportCube = engine.addEntity()
 
   // Add transform to position the cube
@@ -39,7 +41,10 @@ export function createTeleportButton() {
     () => {
       console.log('Teleport cube clicked!') // Confirm click is registered
 
-      // Teleport player to y = 40, keeping x and z the same (relative to scene base)
+      if (!npcIsSetup) {
+        setupNPCs()
+        npcIsSetup = true
+      }
       movePlayerTo({
         newRelativePosition: Vector3.create(8, 40, 8), // Teleport to center of scene at y=40
         cameraTarget: Vector3.create(8, 40, 8) // Optional: Camera looks at same point
