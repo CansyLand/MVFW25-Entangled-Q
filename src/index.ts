@@ -34,6 +34,7 @@ import { isStateSyncronized, syncEntity } from '@dcl/sdk/network'
 - chqnge of wearable shoudl reflect in NPCs
 
 - MWVF25 GitHub
+- NEW SYNC protocol
 
 – 3D environment Blender 23? textures?
 - Flor desing
@@ -72,7 +73,7 @@ function setupNPCs() {
   setupPlayerPresence()
   engine.addSystem(updateNpcWearableSystem)
   engine.addSystem(lookAtPlayerSystem)
-  engine.addSystem(wearableBodyCheckSystem)
+  // engine.addSystem(wearableBodyCheckSystem)
 }
 
 // coordinates -26,-124 -25,-124 -26,-125 -25,-125

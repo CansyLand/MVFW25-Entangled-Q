@@ -18,7 +18,7 @@ const torusEntityInsideThree = engine.addEntity()
 const torusAnimationArray: Entity[] = [torusEntityInsideOne, torusEntityInsideTwo, torusEntityInsideThree]
 let torusAnimationIndex = 0
 let lastFrameTime = 0
-const FRAME_DURATION = 0.1 // Adjust this value to change animation speed (in seconds)
+const FRAME_DURATION = 1 // Adjust this value to change animation speed (in seconds)
 
 export function createTorus() {
   const torusEntity = engine.addEntity()
@@ -30,39 +30,39 @@ export function createTorus() {
   })
 
   GltfContainer.create(torusEntity, {
-    src: 'models/02_torus_06.glb'
+    src: 'models/03_torus_02.glb'
   })
 
   // Inside torus setup
-  Transform.create(torusEntityInsideOne, {
-    position: Vector3.create(16, 0, 16),
-    rotation: Quaternion.fromEulerDegrees(0, 0, 0),
-    scale: Vector3.create(1, 1, 1)
-  })
+  // Transform.create(torusEntityInsideOne, {
+  //   position: Vector3.create(16, 0, 16),
+  //   rotation: Quaternion.fromEulerDegrees(0, 0, 0),
+  //   scale: Vector3.create(1, 1, 1)
+  // })
 
-  GltfContainer.create(torusEntityInsideOne, {
-    src: 'models/02_torus_inside_01.glb'
-  })
+  // GltfContainer.create(torusEntityInsideOne, {
+  //   src: 'models/03_torus_01.glb'
+  // })
 
-  Transform.create(torusEntityInsideTwo, {
-    position: Vector3.create(16, 0, 16),
-    rotation: Quaternion.fromEulerDegrees(0, 0, 0),
-    scale: Vector3.create(1, 1, 1)
-  })
+  // Transform.create(torusEntityInsideTwo, {
+  //   position: Vector3.create(16, 0, 16),
+  //   rotation: Quaternion.fromEulerDegrees(0, 0, 0),
+  //   scale: Vector3.create(1, 1, 1)
+  // })
 
-  GltfContainer.create(torusEntityInsideTwo, {
-    src: 'models/02_torus_inside_02.glb'
-  })
+  // GltfContainer.create(torusEntityInsideTwo, {
+  //   src: 'models/02_torus_inside_02.glb'
+  // })
 
-  Transform.create(torusEntityInsideThree, {
-    position: Vector3.create(16, 0, 16),
-    rotation: Quaternion.fromEulerDegrees(0, 0, 0),
-    scale: Vector3.create(1, 1, 1)
-  })
+  // Transform.create(torusEntityInsideThree, {
+  //   position: Vector3.create(16, 0, 16),
+  //   rotation: Quaternion.fromEulerDegrees(0, 0, 0),
+  //   scale: Vector3.create(1, 1, 1)
+  // })
 
-  GltfContainer.create(torusEntityInsideThree, {
-    src: 'models/02_torus_inside_03.glb'
-  })
+  // GltfContainer.create(torusEntityInsideThree, {
+  //   src: 'models/02_torus_inside_03.glb'
+  // })
 
   // Set initial visibility
   VisibilityComponent.create(torusEntityInsideOne, { visible: true })
@@ -70,7 +70,7 @@ export function createTorus() {
   VisibilityComponent.create(torusEntityInsideThree, { visible: false })
 
   // Add the animation system
-  engine.addSystem(animateTorusSystem)
+  // engine.addSystem(animateTorusSystem)
 }
 
 function animateTorusSystem(dt: number) {

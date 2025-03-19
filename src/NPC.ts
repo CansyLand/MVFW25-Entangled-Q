@@ -24,6 +24,9 @@ const sceneMessageBus = new MessageBus()
 type NpcWearableUpdate = {
   npcId: number
   wearables: string[]
+  eyeColor: Color3 | undefined
+  skinColor: Color3 | undefined
+  hairColor: Color3 | undefined
   name: string
   expressionTriggerId?: string
   playerId: string // Always included for reference
@@ -41,6 +44,9 @@ type NpcStateUpdate = {
   npcStates: Array<{
     npcId: number
     wearables: string[]
+    eyeColor: Color3 | undefined
+    skinColor: Color3 | undefined
+    hairColor: Color3 | undefined
     name: string
     position: { x: number; y: number; z: number }
     playerId: string
@@ -57,6 +63,9 @@ function seededRandom(seed: number): number {
   return x - Math.floor(x)
 }
 
+const venus = 'urn:decentraland:matic:collections-v2:0xff8e630bd43246bf5c37aecc0228af5418a8ceef:6'
+const david = 'urn:decentraland:matic:collections-v2:0xff8e630bd43246bf5c37aecc0228af5418a8ceef:5'
+
 export function spawnNPC(count: number) {
   for (let i = 0; i < count; i++) {
     const myAvatar = engine.addEntity()
@@ -66,7 +75,7 @@ export function spawnNPC(count: number) {
     AvatarShape.create(myAvatar, {
       id: npcNameId,
       name: '',
-      wearables: ['urn:decentraland:matic:collections-v2:0xff8e630bd43246bf5c37aecc0228af5418a8ceef:5'],
+      wearables: [i % 2 === 0 ? venus : david], // Alternate between venus and david
       emotes: []
     })
 
@@ -99,6 +108,9 @@ function setupMessageBusListeners() {
         const npcMutable = npcComponent.getMutable(entity)
         const transform = Transform.getMutable(entity)
         avatar.wearables = info.wearables
+        avatar.eyeColor = info.eyeColor
+        avatar.skinColor = info.skinColor
+        avatar.hairColor = info.hairColor
         avatar.name = info.name
         avatar.expressionTriggerId = info.expressionTriggerId || 'idle'
         npcMutable.playerId = info.playerId
@@ -163,6 +175,9 @@ export function updateNpcWearableSystem(dt: number) {
       sceneMessageBus.emit('updateNpcWearables', {
         npcId: npc.npcId,
         wearables: userData.wearables,
+        eyeColor: userData.avatar?.eyesColor,
+        skinColor: userData.avatar?.skinColor,
+        hairColor: userData.avatar?.hairColor,
         name: userData.name,
         expressionTriggerId: 'clap',
         playerId: currentPlayerId,
@@ -210,6 +225,9 @@ export function followPlayerSystem(dt: number) {
       sceneMessageBus.emit('updateNpcWearables', {
         npcId: npc.npcId,
         wearables: avatar.wearables,
+        eyeColor: avatar.eyeColor,
+        skinColor: avatar.skinColor,
+        hairColor: avatar.hairColor,
         name: avatar.name,
         expressionTriggerId: avatar.expressionTriggerId,
         playerId: npc.playerId || 'undefined',
@@ -224,6 +242,9 @@ export function followPlayerSystem(dt: number) {
       sceneMessageBus.emit('updateNpcWearables', {
         npcId: npc.npcId,
         wearables: avatar.wearables,
+        eyeColor: avatar.eyeColor,
+        skinColor: avatar.skinColor,
+        hairColor: avatar.hairColor,
         name: avatar.name,
         expressionTriggerId: 'idle', // Reset to idle when leaving
         playerId: npc.playerId || 'undefined',
@@ -309,6 +330,9 @@ export function setupPlayerPresence() {
         sceneMessageBus.emit('updateNpcWearables', {
           npcId: npc.npcId,
           wearables: equipped.wearableUrns,
+          eyeColor: avatar.eyeColor,
+          skinColor: avatar.skinColor,
+          hairColor: avatar.hairColor,
           name: avatar.name,
           expressionTriggerId: avatar.expressionTriggerId,
           playerId: playerId,
@@ -338,6 +362,9 @@ export function setupPlayerPresence() {
         sceneMessageBus.emit('updateNpcWearables', {
           npcId: npc.npcId,
           wearables: avatar.wearables, // Keep existing wearables
+          eyeColor: avatar.eyeColor,
+          skinColor: avatar.skinColor,
+          hairColor: avatar.hairColor,
           name: player.name, // Update name from player data
           expressionTriggerId: avatar.expressionTriggerId,
           playerId: playerId,
@@ -394,6 +421,9 @@ function sendNpcStateToNewPlayer(targetPlayerId: string) {
     npcStates.push({
       npcId: npc.npcId,
       wearables: avatar.wearables,
+      eyeColor: avatar.eyeColor,
+      skinColor: avatar.skinColor,
+      hairColor: avatar.hairColor,
       name: avatar.name || '',
       position: transform.position,
       playerId: npc.playerId || 'undefined'
@@ -415,6 +445,9 @@ function updateNpcStates(npcStates: NpcStateUpdate['npcStates']) {
         const avatar = AvatarShape.getMutable(entity)
         const transform = Transform.getMutable(entity)
         avatar.wearables = state.wearables
+        avatar.eyeColor = state.eyeColor
+        avatar.skinColor = state.skinColor
+        avatar.hairColor = state.hairColor
         avatar.name = state.name
         transform.position = state.position
         npc.playerId = state.playerId
