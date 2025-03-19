@@ -2,8 +2,8 @@
   "ecs7": true,
   "runtimeVersion": "7",
   "display": {
-    "title": "mvfw-test",
-    "description": "mvfw-test",
+    "title": "Entangled Q",
+    "description": "Metaverse Fashion Week 2025",
     "navmapThumbnail": "images/scene-thumbnail2.png",
     "favicon": "favicon_asset"
   },
@@ -15,8 +15,8 @@
   "main": "bin/index.js",
   "tags": [],
   "scene": {
-    "parcels": ["0,0", "0,1", "1,0", "1,1"],
-    "base": "0,0"
+    "parcels": ["145,-82", "146,-82", "145,-81", "146,-81"],
+    "base": "145,-82"
   },
   "spawnPoints": [
     {
@@ -38,9 +38,5 @@
     "voiceChat": "enabled",
     "portableExperiences": "enabled"
   },
-  "requiredPermissions": ["ALLOW_TO_TRIGGER_AVATAR_EMOTE", "ALLOW_TO_MOVE_PLAYER_INSIDE_SCENE"],
-  "source": {
-    "origin": "creator-hub",
-    "projectId": "b9e20cb7-61be-430a-b058-27fe2c6fc940"
-  }
+  "requiredPermissions": ["ALLOW_TO_TRIGGER_AVATAR_EMOTE", "ALLOW_TO_MOVE_PLAYER_INSIDE_SCENE"]
 }
